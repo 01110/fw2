@@ -205,7 +205,7 @@ namespace am0r
 
       int type;
       unpacker.unpack(type);
-      // send_log("RX: %d", type);
+      //send_log("RX: %d", type);
 
       switch(type)
       {
@@ -219,6 +219,12 @@ namespace am0r
         {
           login_successful = false;
           if(msg_cb) msg_cb(am0r::msg_type_cache_part, rx_buffer, rx_size);
+          break;
+        }
+        case am0r::msg_type_select_start:
+        case am0r::msg_type_select_end:
+        {
+          if(msg_cb) msg_cb((am0r::msg_type_e)type, rx_buffer, rx_size);
           break;
         }
       }

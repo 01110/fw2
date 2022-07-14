@@ -15,8 +15,8 @@ bitmap_cache cache;
 uint8_t cache_index = 0;
 state_e state = state_connecting;
 
-CRGB selecting_image[WS_LED_NUM];
-CRGB connecting_image[WS_LED_NUM];
+extern CRGB selecting_image[];
+extern CRGB connecting_image[];
 
 bool hb_timer_cb(void* data)
 {
@@ -62,10 +62,16 @@ void msg_cb(msg_type_e type, const char* msg, uint64_t len)
     case msg_type_select_start:
     {
       //display selecting
-      fill_solid(selecting_image, WS_LED_NUM, CRGB::Orange);
       ws2812b_8x8::set(selecting_image);
-      set_state(state_bond_is_selecting, event_rx_select);
+      set_state(state_bond_is_selecting, event_rx_select_start);
       break;
+    }
+    case msg_type_select_end:
+    {
+      unpacker.unpack(cache_index);
+      if(cache_index >= cache.size()) cache_index = cache.size() -1;
+      ws2812b_8x8::set(cache.get_bitmap(cache_index)->data);
+      set_state(state_idle, event_rx_select_end);
     }
     default:
       networking::send_log("unkown msg type: %d", type);
@@ -80,14 +86,13 @@ void click_cb()
     networking::send_msg(msg_type_select_start);
     set_state(state_selecting, event_button_click);
   }
-  //if(state == state_selecting)
+  if(state == state_selecting)
   {
     //show next pic from cache
     cache_index++;
     if(cache_index == cache.size()) cache_index = 0;
     ws2812b_8x8::set(cache.get_bitmap(cache_index)->data);
-  }
-  
+  }  
 }
 
 void longpress_start_cb()
@@ -118,7 +123,6 @@ void setup()
 {
   networking::setup();
   ws2812b_8x8::setup();
-  fill_gradient_RGB(connecting_image, WS_LED_NUM, CRGB::Azure, CRGB::Black);
   ws2812b_8x8::set(connecting_image);
 
   networking::attach_msg_cb(msg_cb);

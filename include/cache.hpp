@@ -27,6 +27,8 @@ namespace am0r
 
     bitmap_s* get_bitmap(uint64_t index)
     {
+      if(bitmaps.size() == 0) return NULL;
+      if(bitmaps.size() < index) return NULL;
       return &bitmaps[index];
     }
 
@@ -34,6 +36,7 @@ namespace am0r
     
     String calc_sha1() const
     {
+      if(bitmaps.size() == 0) return "empty";
       return sha1((const char*)bitmaps.data(), bitmaps.size()*sizeof(bitmap_s));
     }
 

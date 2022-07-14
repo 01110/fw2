@@ -22,6 +22,7 @@ namespace am0r
 
     void set(CRGB *in)
     {
+      if(in == NULL) return;
       memcpy(out, in, WS_LED_NUM * 3);
       //fill_solid(out, WS_LED_NUM, CRGB::Orange);
       FastLED.show();
