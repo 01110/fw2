@@ -11,6 +11,7 @@
 using namespace am0r;
 
 Timer hb_timer = Timer<1, millis>();
+Timer send_timer = Timer<1, millis>();
 bitmap_cache cache;
 uint8_t cache_index = 0;
 state_e state = state_connecting;
@@ -79,12 +80,24 @@ void msg_cb(msg_type_e type, const char* msg, uint64_t len)
   }
 }
 
+bool selected_cb(void* data)
+{
+  if(state == state_selecting)
+  {
+    set_state(state_idle, event_button_longclick_start);
+    networking::send_select_end(cache_index);
+  }
+  return true;
+}
+
 void click_cb()
 {
   if(state == state_idle)
   {
     networking::send_msg(msg_type_select_start);
     set_state(state_selecting, event_button_click);
+    send_timer.cancel();
+    send_timer.in(1000, selected_cb);
   }
   if(state == state_selecting)
   {
@@ -92,16 +105,9 @@ void click_cb()
     cache_index++;
     if(cache_index == cache.size()) cache_index = 0;
     ws2812b_8x8::set(cache.get_bitmap(cache_index)->data);
+    send_timer.cancel();
+    send_timer.in(1000, selected_cb);
   }  
-}
-
-void longpress_start_cb()
-{
-  if(state == state_selecting)
-  {
-    set_state(state_idle, event_button_longclick_start);
-    networking::send_select_end(cache_index);
-  }
 }
 
 void connection_cb(event_e event)
@@ -128,7 +134,7 @@ void setup()
   networking::attach_msg_cb(msg_cb);
   networking::attach_conn_cb(connection_cb);
   button::attach_click_cb(click_cb);
-  button::attach_longpress_start_cb(longpress_start_cb);
+  //button::attach_longpress_start_cb(longpress_start_cb);
 
   hb_timer.every(10000, hb_timer_cb);
 }
@@ -136,6 +142,7 @@ void setup()
 void loop()
 {
   hb_timer.tick();
+  send_timer.tick();
 
   networking::loop();
   ws2812b_8x8::loop();
