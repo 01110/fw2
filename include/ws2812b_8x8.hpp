@@ -28,6 +28,11 @@ namespace am0r
       FastLED.show();
     }
 
+    void set_brightness(uint8_t value)
+    {
+      FastLED.setBrightness(value);
+    }
+
     void set_enable(bool on)
     {
       ws2812b_8x8::on = on;

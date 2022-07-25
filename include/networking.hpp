@@ -2,7 +2,7 @@
 
 #include <ESP8266WiFi.h>
 #include <arduino-timer.h>
-#include <ArduinoOTA.h>
+// #include <ArduinoOTA.h>
 #include <FastLED.h>
 #include <MsgPack.h>
 
@@ -24,6 +24,7 @@ namespace am0r
     int         server_port = SERVER_PORT;
 
     WiFiClient  client;
+    bool        client_enabled = true;
     Timer       connection_timer = Timer<1, millis>();
 
     uint64_t    tx_size = 0;
@@ -183,7 +184,7 @@ namespace am0r
 
     bool reconnect(void* data)
     {
-      if(WiFi.status() == WL_CONNECTED && client.connected() == 0)
+      if(WiFi.status() == WL_CONNECTED && client.connected() == 0 && client_enabled)
         client.connect(server_ip, server_port);
       
       return true;
@@ -270,6 +271,15 @@ namespace am0r
       }
     }
 
+    void set_client_enable(bool enable)
+    {
+      client_enabled = enable;
+      if(!client_enabled)
+      {
+        client.stop();
+      }
+    }
+
     void setup()
     {
       //TCP client
@@ -288,7 +298,7 @@ namespace am0r
       connection_timer.every(1000, reconnect);
 
       //ota
-      ArduinoOTA.begin();
+      // ArduinoOTA.begin();
     }
 
     unsigned long counter = 0;
@@ -296,7 +306,7 @@ namespace am0r
     void loop()
     {
       //for ota update
-      ArduinoOTA.handle();
+      // ArduinoOTA.handle();
 
       //tick the timers
       connection_timer.tick();
