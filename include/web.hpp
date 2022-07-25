@@ -13,31 +13,9 @@ namespace am0r
 
     voidcb updated_cb = NULL;
 
-    void handleRoot(AsyncWebServerRequest* request)
-    {
-      request->send(LittleFS, "/index.html");
-    }
-
-    void fs_status(AsyncWebServerRequest* request)
-    {
-      fs::FSInfo info;
-      LittleFS.info(info);
-      String body;
-      body = "total: " + String(info.totalBytes);
-      body += " used: " + String(info.usedBytes);
-
-      request->send(200, "plain/text", body);
-    }
-
-    void image_get(AsyncWebServerRequest* request)
-    {
-      request->send(LittleFS, "/image.raw");
-    }
-
     void image_upload_req(AsyncWebServerRequest* request)
     {
-      request->send(200);
-      
+      request->send(200);      
     }    
 
     void image_upload(AsyncWebServerRequest * request, String filename, size_t index, uint8_t *data, size_t len, bool final)
@@ -77,16 +55,36 @@ namespace am0r
       updated_cb = callback;
     }
 
+    String processor(const String& var)
+    {
+      fs::FSInfo info;
+      LittleFS.info(info);
+      if(var == "TOTAL_SIZE")
+        return String(info.totalBytes / 1024);
+      else if(var == "ALLOCATED_SIZE")
+        return String(info.usedBytes / 1024);
+      else
+        return String();
+    }
+
     void setup()
     {
       LittleFS.begin();
-      server.on("/", HTTP_GET, handleRoot);
-      server.on("/main.js", HTTP_GET, [](AsyncWebServerRequest* request){
-         request->send(LittleFS, "/main.js");
+      server.on("/", HTTP_GET, [](AsyncWebServerRequest* request)
+      {
+        request->send(LittleFS, "/index.html", String(), false, processor);
       });
-      server.on("/image.raw", HTTP_GET, image_get);
+      server.on("/main.js", HTTP_GET, [](AsyncWebServerRequest* request)
+      {
+        AsyncWebServerResponse *response = request->beginResponse(LittleFS, "/main.js.gz", "text/javascript", false, nullptr);
+        response->addHeader("Content-Encoding", "gzip");
+        request->send(response);
+      });
+      server.on("/image.raw", HTTP_GET, [](AsyncWebServerRequest* request)
+      {      
+        request->send(LittleFS, "/image.raw", "application/octet-stream");
+      });
       server.on("/image.raw", HTTP_POST, image_upload_req, image_upload);
-      server.on("/fs_status", HTTP_GET, fs_status);
       server.begin();
     }
   }
