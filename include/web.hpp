@@ -13,6 +13,70 @@ namespace am0r
 
     voidcb updated_cb = NULL;
 
+    bool set_displayed_image(String name)
+    {
+      File di = LittleFS.open("/displayed_image", "w");
+      if(!di) return false;
+      if(di.write(name.c_str()) != name.length()) return false;
+      di.close();
+      if(updated_cb) updated_cb();
+      return true;
+    }
+
+    bool get_displayed_image(String& filename)
+    {
+      File di = LittleFS.open("/displayed_image", "r");
+      if(!di) return false;
+      filename = di.readString();
+      di.close();
+      return true;
+    }
+
+    void select_next_image(String name)
+    {
+      Dir dir = LittleFS.openDir("/images");
+      uint32_t file_count = 0;
+      while (dir.next()) file_count++;
+
+      if(file_count == 0 || file_count == 1)
+      {
+        set_displayed_image("");
+        return;
+      }
+
+      dir.rewind();
+      while (dir.next())
+      {
+        //if found the file, get the next
+        if(dir.fileName() == name)
+        {
+          if(dir.next()) //the displayed was not the last file, we can select the next one
+          {
+            set_displayed_image(dir.fileName());
+            return;
+          }
+          else //the displayed is the last file, we have to go back to the first one
+          {
+            dir.rewind();
+            dir.next();
+            set_displayed_image(dir.fileName());
+            return;
+          }
+        }
+      }
+    }
+
+    bool del_image(String name)
+    {
+      String displayed_image;
+      if(!get_displayed_image(displayed_image)) return false;
+
+      //if we want to delete the displayed image, we will set the next one as displayed
+      if(name == displayed_image) select_next_image(displayed_image);
+
+      return LittleFS.remove("/images/" + name);
+    }
+
     void image_upload_req(AsyncWebServerRequest* request)
     {
       request->send(200);      
@@ -22,7 +86,7 @@ namespace am0r
     {
       if(index == 0)
       {
-        request->_tempFile = LittleFS.open("/image.raw", "w");
+        request->_tempFile = LittleFS.open("/images/" + filename, "w");
         if(!request->_tempFile)
         {
           request->send(500, "plain/text", "Failed to open file.");
@@ -41,7 +105,12 @@ namespace am0r
       if (final)
       {
         request->_tempFile.close();
-        if(updated_cb) updated_cb();
+
+        if(!set_displayed_image(filename))
+        {
+          request->send(500, "plain/text", "Set error.");
+          return;
+        }
       }
     }
 
@@ -80,11 +149,62 @@ namespace am0r
         response->addHeader("Content-Encoding", "gzip");
         request->send(response);
       });
-      server.on("/image.raw", HTTP_GET, [](AsyncWebServerRequest* request)
-      {      
-        request->send(LittleFS, "/image.raw", "application/octet-stream");
+      server.on("/displayed_image", HTTP_GET, [](AsyncWebServerRequest* request)
+      {
+        //read displayed image filename and send it
+        String filename;
+        if(!get_displayed_image(filename))
+        {
+          request->send(500, "plain/text", "Can't read displayed image file.");
+          return;
+        }
+
+        request->send(LittleFS, "/images/" + filename, "application/octet-stream");
       });
-      server.on("/image.raw", HTTP_POST, image_upload_req, image_upload);
+      server.on("/displayed_image", HTTP_POST, [](AsyncWebServerRequest* request)
+      {
+        String filename = request->arg("displayed_image");
+        if(!set_displayed_image(filename))
+        {
+          request->send(500, "plain/text", "Failed to set displayed_image");
+          return;
+        }
+        request->send(200);
+      });
+      server.on("/image", HTTP_POST, image_upload_req, image_upload);
+      server.on("/image", HTTP_DELETE, [](AsyncWebServerRequest* request)
+      {
+        String filename = request->arg("image");
+        if(!del_image(filename))
+        {
+          request->send(500, "plain/text", "Failed to delete image.");
+          return;
+        }
+        request->send(200);
+      });
+      server.on("/images", HTTP_GET, [](AsyncWebServerRequest* request)
+      {
+        String output;
+        output += "{\"images\": [";
+
+        Dir dir = LittleFS.openDir("/images");
+        bool first = true;
+        while (dir.next())
+        {
+          if(!first) output += ",";
+          else first = false;
+          output += "\"" + dir.fileName() + "\"";
+        }
+
+        output += "]}";
+        request->send(200, "text/json", output);
+      });
+      server.on("/fs_status", HTTP_GET, [](AsyncWebServerRequest* request)
+      {
+        String output;
+        output += "{\"total_size\":" + processor("TOTAL_SIZE") + ", \"allocated_size\":" + processor("ALLOCATED_SIZE") + "}";
+        request->send(200, "text/json", output);
+      });
       server.begin();
     }
   }

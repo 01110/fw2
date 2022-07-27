@@ -6,16 +6,20 @@
   </head>
   <body>
 
-    <h3>Images</h3>
+    <h3>Displayed image</h3>    
     <canvas id="displayed_image" width="240" height="240" style="border-style: solid; border-width: 1px;"></canvas>
     <form id="png_upload_form" method="post"  onsubmit="upload_png()">
       <input type="file" name="png_file" >
       <input type="submit" id="submit" value="upload">
     </form>
 
+    <h3>Stored images</h3>
+    <table id="image_list">
+    </table>
+
     <h3>Storage</h3>
-    <div>Total: %TOTAL_SIZE% KB</div>
-    <div>Allocated: %ALLOCATED_SIZE% KB</div>
+    <div id="total_size">Total: %TOTAL_SIZE% KB</div>
+    <div id="allocated_size">Allocated: %ALLOCATED_SIZE% KB</div>
   
     <script src="main.js"></script>
   </body>

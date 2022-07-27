@@ -26,7 +26,9 @@ void connection_cb(event_e event)
 
 void image_updated()
 {
-  File image_file = LittleFS.open("image.raw", "r");
+  String filename;
+  if(!web::get_displayed_image(filename)) return;
+  File image_file = LittleFS.open("/images/" + filename, "r");
   if(!image_file) return;
   if((size_t)image_file.read((uint8_t*)temp_image, sizeof(temp_image)) != image_file.size())
   {
