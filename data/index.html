@@ -7,7 +7,7 @@
   <body>
 
     <h3>Displayed image</h3>    
-    <canvas id="displayed_image" width="240" height="240" style="border-style: solid; border-width: 1px;"></canvas>
+    <canvas id="displayed_image" width="8" height="8" style="width: 240px; height: 240px; border-style: solid; border-width: 1px; image-rendering: pixelated; image-rendering: crisp-edges;"></canvas>
     <form id="png_upload_form" method="post"  onsubmit="upload_png()">
       <input type="file" name="png_file" >
       <input type="submit" id="submit" value="upload">

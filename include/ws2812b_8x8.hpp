@@ -28,6 +28,12 @@ namespace am0r
       FastLED.show();
     }
 
+    void set_color(CRGB color)
+    {
+      fill_solid(out, WS_LED_NUM, color);
+      FastLED.show();
+    }
+
     void set_brightness(uint8_t value)
     {
       FastLED.setBrightness(value);

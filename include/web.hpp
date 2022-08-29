@@ -159,7 +159,7 @@ namespace am0r
           return;
         }
 
-        request->send(LittleFS, "/images/" + filename, "application/octet-stream");
+        request->send(LittleFS, "/images/" + filename, "image/png");
       });
       server.on("/displayed_image", HTTP_POST, [](AsyncWebServerRequest* request)
       {
