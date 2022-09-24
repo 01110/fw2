@@ -111,6 +111,8 @@ namespace am0r
           request->send(500, "plain/text", "Set error.");
           return;
         }
+
+        request->send(200);
       }
     }
 
@@ -132,6 +134,8 @@ namespace am0r
         return String(info.totalBytes / 1024);
       else if(var == "ALLOCATED_SIZE")
         return String(info.usedBytes / 1024);
+      else if(var == "FREE_HEAP")
+        return String(ESP.getFreeHeap());
       else
         return String();
     }
@@ -159,7 +163,13 @@ namespace am0r
           return;
         }
 
-        request->send(LittleFS, "/images/" + filename, "image/png");
+        String content_type = "unkown";
+        if(filename.endsWith(".png")) content_type = "image/png";
+        else if(filename.endsWith(".gif")) content_type = "image/gif";
+
+        AsyncWebServerResponse *response = request->beginResponse(LittleFS, "/images/" + filename, content_type, false, nullptr);
+        response->addHeader("Cache-Control", "no-cache");
+        request->send(response);
       });
       server.on("/displayed_image", HTTP_POST, [](AsyncWebServerRequest* request)
       {
@@ -202,7 +212,7 @@ namespace am0r
       server.on("/fs_status", HTTP_GET, [](AsyncWebServerRequest* request)
       {
         String output;
-        output += "{\"total_size\":" + processor("TOTAL_SIZE") + ", \"allocated_size\":" + processor("ALLOCATED_SIZE") + "}";
+        output += "{\"total_size\":" + processor("TOTAL_SIZE") + ", \"allocated_size\":" + processor("ALLOCATED_SIZE") + ", \"free_heap\":" + processor("FREE_HEAP") + "}";
         request->send(200, "text/json", output);
       });
       server.begin();

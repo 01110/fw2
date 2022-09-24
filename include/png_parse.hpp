@@ -4,7 +4,7 @@
 #include <cstdlib>
 #include <cmath>
 
-namespace png_parse
+namespace img_parse
 {
   typedef enum
   {

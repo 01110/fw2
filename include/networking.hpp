@@ -2,7 +2,7 @@
 
 #include <ESP8266WiFi.h>
 #include <arduino-timer.h>
-#include <ArduinoOTA.h>
+// #include <ArduinoOTA.h>
 #include <FastLED.h>
 
 #include "am0r.hpp"
@@ -69,7 +69,7 @@ namespace am0r
       WiFi.begin(ssid, password);
 
       //ota
-      ArduinoOTA.begin();
+      // ArduinoOTA.begin();
     }
 
     unsigned long counter = 0;
@@ -77,7 +77,7 @@ namespace am0r
     void loop()
     {
       //for ota update
-      ArduinoOTA.handle();
+      // ArduinoOTA.handle();
       //update state variables
       update_connection_level();
 
