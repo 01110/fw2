@@ -16,9 +16,13 @@ using namespace am0r;
 Timer hb_timer = Timer<2, millis>();
 
 extern CRGB connecting_image[];
+anim::animation_s animation;
 
 void click_cb()
 { 
+  String act;
+  web::get_displayed_image(act);
+  web::select_next_image(act);
 }
 
 void connection_cb(event_e event)
@@ -55,7 +59,7 @@ void image_updated()
   CRGB image[WS_LED_NUM];
 
   if(png)
-  { 
+  {
     img_parse::png_parse_context_s ctx;
     if(!img_parse::init(ctx, img_buf, img_size)) return;
     free(img_buf);
@@ -77,6 +81,7 @@ void image_updated()
       }
     }
     img_parse::deinit(ctx);
+    ws2812b_8x8::set(image);
   }
   else
   {
@@ -84,47 +89,36 @@ void image_updated()
     
     if(img_parse::init(ctx, img_buf, img_size) != img_parse::error_code_ok) return;
     free(img_buf);
-    // ws2812b_8x8::set_color(CRGB::White);
     img_parse::error_code_e err = img_parse::parse(ctx);
     if(err != img_parse::error_code_ok)
     {
-      // switch (err)
-      // {
-      // case img_parse::error_code_mem_alloc:
-      //   ws2812b_8x8::set_color(CRGB::Orange);
-      //   break;
-      // case img_parse::error_code_out_of_bounds:
-      //   ws2812b_8x8::set_color(CRGB::Purple);
-      //   break;
-      // case img_parse::error_code_not_supported:
-      //   ws2812b_8x8::set_color(CRGB::Aqua);
-      //   break;
-      // case img_parse::error_code_inconsistence:
-      //   ws2812b_8x8::set_color(CRGB::Red);
-      //   break;
-      // case img_parse::error_code_null_pt:
-      //   ws2812b_8x8::set_color(CRGB::Green);
-      //   break;
-      // case img_parse::error_code_parsed:
-      //   ws2812b_8x8::set_color(CRGB::Blue);
-      //   break;
-      // default:
-      //   break;
-      // }
       img_parse::deinit(ctx);
       return;
     }
-
-    // ws2812b_8x8::set_color(CRGB::Blue);
     if(ctx.lsd.height != 8 || ctx.lsd.width != 8) return;
-    memcpy(image, ctx.images[0].output, sizeof(image));
-    // ws2812b_8x8::set_color(CRGB::Red);
+
+    if(ctx.images_size == 1)
+    {
+      memcpy(image, ctx.images[0].output, sizeof(image));
+      ws2812b_8x8::set(image);
+    }
+    else
+    {
+      anim::animation_init(&animation); //dealloc if necessary and zero everything
+      for(uint32_t i = 0; i < ctx.images_size; i++)
+      {
+        if(!ctx.images[i].gce.valid) continue; //skip frames without gce
+        anim::add_frame(&animation, 
+                        ctx.images[i].gce.delay_time_10ms * 10, 
+                        ctx.images[i].id.left_position, 
+                        ctx.images[i].id.top_position,
+                        (CRGB*)ctx.images[i].output,
+                        ctx.images[i].output_size);
+      }
+      ws2812b_8x8::set(&animation);
+    }
     img_parse::deinit(ctx);
-    // ws2812b_8x8::set_color(CRGB::Purple);
   }
- 
-  //display parsed image
-  ws2812b_8x8::set(image);
 }
 
 bool displayed_image_check(void* data)
@@ -145,7 +139,7 @@ void setup()
   web::add_updated_cb(image_updated);
   // hb_timer.every(1000, displayed_image_check);
 
-  delay(1000);
+  delay(200);
   image_updated();
 }
 

@@ -57,6 +57,13 @@ namespace img_parse
     uint8_t interlace_flag :1;
     uint8_t local_color_table_flag :1;
   } id_fields_s;
+
+  typedef struct
+  {
+    uint8_t disposal_method:3;
+    uint8_t user_input_flag:1;
+    uint8_t transparent_color_flag:1;
+  } gce_fields_s;  
   
   typedef struct logical_screen_descriptor_s
   {
@@ -66,6 +73,14 @@ namespace img_parse
     uint8_t  background_color_index;
     uint8_t  pixel_aspect_ratio;
   } logical_screen_descriptor_s;
+
+  typedef struct graphic_control_extension_s
+  {
+    gce_fields_s fields;
+    uint16_t delay_time_10ms;
+    uint8_t  transparent_color_index;
+    bool valid;
+  } graphic_control_extension_s;
 
   typedef struct image_descriptor_s
   {
@@ -97,6 +112,9 @@ namespace img_parse
     //local color table
     color_s* lct;
     uint32_t lct_size;
+
+    //graphic control extension
+    graphic_control_extension_s gce;
 
     //lzw parse
     uint8_t starting_code_size;
@@ -136,6 +154,9 @@ namespace img_parse
     //global color table
     color_s *gct;
     uint32_t gct_size;
+
+    //last graphic control extension
+    graphic_control_extension_s last_gce;
 
     image_s* images;
     uint32_t images_size;
@@ -283,7 +304,7 @@ namespace img_parse
     if(ctx.images_size == 0) return error_code_inconsistence;
 
     image_s* image_pt = ctx.images + (ctx.images_size - 1);
-    if(!image_pt->id.fields.local_color_table_flag) return error_code_inconsistence;
+    if(!image_pt->id.fields.local_color_table_flag) return error_code_ok;
 
     //calc the gct size and check the input size
     uint32_t lct_size = (0x01 << (image_pt->id.fields.local_color_table_size + 1)) * 3;
@@ -296,6 +317,26 @@ namespace img_parse
     memcpy(image_pt->lct, ctx.input + ctx.offset, lct_size);
 
     ctx.offset += lct_size;
+    return error_code_ok;
+  }
+
+  error_code_e parse_gce(gif_parse_context_s& ctx)
+  {
+    if(ctx.parsed) return error_code_parsed;
+    if(ctx.input_size < (ctx.offset + 8)) return error_code_out_of_bounds;
+    if(*(ctx.input + ctx.offset) != block_type_extension_introducer) return error_code_inconsistence;
+    if(*(ctx.input + ctx.offset + 1) != block_label_graphic_control) return error_code_inconsistence;
+
+    //checks of fixed length block
+    if(*(ctx.input + ctx.offset + 2) != 4) return error_code_inconsistence; //sub block data length
+    if(*(ctx.input + ctx.offset + 7) != 0) return error_code_inconsistence; //block terminator
+
+    memcpy(&ctx.last_gce.fields, ctx.input + ctx.offset + 3, 1);
+    memcpy(&ctx.last_gce.delay_time_10ms, ctx.input + ctx.offset + 4, 2);
+    memcpy(&ctx.last_gce.transparent_color_index, ctx.input + ctx.offset + 6, 1);
+    ctx.last_gce.valid = true;
+
+    ctx.offset += 8;
     return error_code_ok;
   }
 
@@ -431,6 +472,8 @@ namespace img_parse
     {
       ctx.images = (image_s*)realloc(ctx.images, sizeof(image_s) * (ctx.images_size + 1));
       if(ctx.images == NULL) return error_code_mem_alloc;
+      //init the newly allocated image struct
+      memset(ctx.images + ctx.images_size, 0, sizeof(image_s));
       ctx.images_size++;
     }
 
@@ -448,7 +491,11 @@ namespace img_parse
     if(image_pt->id.height != ctx.lsd.height) return error_code_not_supported;
     if(image_pt->id.width != ctx.lsd.width) return error_code_not_supported;
 
-    
+    if(ctx.last_gce.valid)
+    {
+      memcpy(&image_pt->gce, &ctx.last_gce, sizeof(graphic_control_extension_s));
+      ctx.last_gce.valid = false;
+    }
 
     //parse local color table
     ctx.offset += 1 + 9;
@@ -565,10 +612,13 @@ namespace img_parse
   error_code_e parse_extension(gif_parse_context_s& ctx)
   {
     if(ctx.parsed) return error_code_parsed;
-    if(ctx.input_size - ctx.offset < 4) return error_code_out_of_bounds;
+    if(ctx.input_size < ctx.offset + 4) return error_code_out_of_bounds;
     if(*(ctx.input + ctx.offset) != block_type_extension_introducer) return error_code_inconsistence;
 
-    //uint8_t label = *(ctx.input + ctx.offset + 1);
+    //supported extensions
+    if(*(ctx.input + ctx.offset + 1) == block_label_graphic_control) return parse_gce(ctx);
+
+    //skipping all the blocks of the extension
     uint8_t block_size = *(ctx.input + ctx.offset + 2);
     if((ctx.input_size - ctx.offset) < (uint32_t)(3 + block_size)) return error_code_out_of_bounds;
 
@@ -607,7 +657,7 @@ namespace img_parse
     }
     case block_type_extension_introducer:
     {
-      //skips all extension blocks
+      //skips all extension blocks except gce
       parse_extension(ctx);
       break;
     }
@@ -671,4 +721,3 @@ namespace img_parse
   }
   
 } // namespace img_parse
-
