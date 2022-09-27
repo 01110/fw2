@@ -153,6 +153,12 @@ namespace am0r
         response->addHeader("Content-Encoding", "gzip");
         request->send(response);
       });
+      server.on("/mvp.css", HTTP_GET, [](AsyncWebServerRequest* request)
+      {
+        AsyncWebServerResponse *response = request->beginResponse(LittleFS, "/mvp.css", "text/css", false, nullptr);
+        // response->addHeader("Content-Encoding", "gzip");
+        request->send(response);
+      });
       server.on("/displayed_image", HTTP_GET, [](AsyncWebServerRequest* request)
       {
         //read displayed image filename and send it
