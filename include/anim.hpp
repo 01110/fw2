@@ -2,7 +2,7 @@
 
 #define FRAME_ALLOCATION_SIZE 4
 
-namespace am0r
+namespace pixelbox
 {
   namespace anim
   {
@@ -73,4 +73,4 @@ namespace am0r
     }
     
   } // namespace anim  
-} // namespace am0r
+} // namespace pixelbox

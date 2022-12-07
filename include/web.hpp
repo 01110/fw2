@@ -1,12 +1,33 @@
+#pragma once
+
+//wifimanager_lite parameters
+// #define USE_DYNAMIC_PARAMETERS      false 
+// #define REQUIRE_ONE_SET_SSID_PW     true
+// #define SCAN_WIFI_NETWORKS          true
+// #define USE_LITTLEFS                true
+// #define USE_SPIFFS                  false
+// #define TO_LOAD_DEFAULT_CONFIG_DATA false
+
 #include <ESPAsyncTCP.h>
 #include <ESPAsyncWebServer.h>
+#include <ESPAsyncDNSServer.h>
+#include <ESPAsync_WiFiManager_Lite.h>
 #include <LittleFS.h>
 
-namespace am0r
+#include "ws2812b_8x8.hpp"
+
+#define SSID_MAX_LEN            32
+#define PASS_MAX_LEN            64
+
+bool LOAD_DEFAULT_CONFIG_DATA = false;
+ESP_WM_LITE_Configuration defaultConfig;
+
+namespace pixelbox
 {
   namespace web
   {
     AsyncWebServer server(80);
+    ESPAsync_WiFiManager_Lite wifi_manager;
 
     typedef void (*routeCallbackFunction)(AsyncWebServerRequest*);
     typedef void (*voidcb)(void);
@@ -143,6 +164,8 @@ namespace am0r
     void setup()
     {
       LittleFS.begin();
+      wifi_manager.begin();
+
       server.on("/", HTTP_GET, [](AsyncWebServerRequest* request)
       {
         request->send(LittleFS, "/index.html", String(), false, processor);
@@ -222,6 +245,11 @@ namespace am0r
         request->send(200, "text/json", output);
       });
       server.begin();
+    }
+
+    void loop()
+    {
+      wifi_manager.run();
     }
   }
 }

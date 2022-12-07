@@ -1,0 +1,11 @@
+ok remove Wi-Fi connection data
+ok make Wi-Fi access point if not managed to connect to a Wi-Fi network
+ok make Wi-Fi connection to be parameterized
+ok remove am0r namespace
+ok fix web server
+ok khoih-prog/ESPAsync_WiFiManager_Lite
+make cpp files from headers
+gui: brightness slider
+gui: ampere slider
+gui: on/off
+gui: manual frame delay [ms]

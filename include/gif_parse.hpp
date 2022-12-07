@@ -209,7 +209,7 @@ namespace img_parse
     if(ctx.input[1] != 0x49) return error_code_inconsistence;
     if(ctx.input[2] != 0x46) return error_code_inconsistence;
 
-    //version '89a'
+    //version '89a' and '87a'
     if(ctx.input[3] != 0x38) return error_code_inconsistence;
     if(ctx.input[4] != 0x39 && ctx.input[4] != 0x37) return error_code_inconsistence;
     if(ctx.input[5] != 0x61) return error_code_inconsistence;

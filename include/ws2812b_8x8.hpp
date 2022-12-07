@@ -2,7 +2,6 @@
 
 #include <FastLED.h>
 #include <arduino-timer.h>
-#include "networking.hpp"
 #include "anim.hpp"
 #include "Hash.h"
 
@@ -11,7 +10,7 @@
 #define WS_LED_NUM    (WS_LED_WIDTH * WS_LED_HEIGHT)
 #define WS_DATA_PIN   2
 
-namespace am0r
+namespace pixelbox
 {
   namespace ws2812b_8x8
   {
@@ -95,7 +94,7 @@ namespace am0r
     void setup()
     {
       FastLED.addLeds<WS2812B, WS_DATA_PIN, GRB>(out, WS_LED_NUM);
-      FastLED.setBrightness(32);
+      FastLED.setBrightness(64);
       fill_solid(out, WS_LED_NUM, CHSV(0,0,0));
       FastLED.show();
       timer.every(33, render);

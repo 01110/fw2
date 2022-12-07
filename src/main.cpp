@@ -2,42 +2,38 @@
 #include <arduino-timer.h>
 #include <FastLED.h>
 #include <LittleFS.h>
+#include <OneButton.h>
 
 #include "gif_parse.hpp"
-#include "networking.hpp"
-#include "ws2812b_8x8.hpp"
-#include "button.hpp"
-#include "web.hpp"
 #include "png_parse.hpp"
+// #include "networking.hpp"
+#include "ws2812b_8x8.hpp"
+#include "web.hpp"
 
-
-using namespace am0r;
-
-Timer hb_timer = Timer<2, millis>();
+#define BUTTON_GPIO_PIN          0
 
 extern CRGB connecting_image[];
-anim::animation_s animation;
+pixelbox::anim::animation_s animation;
+
+//                                    pin, active low, pull-up resistor
+OneButton btn = OneButton(BUTTON_GPIO_PIN,       true,            false);
 
 void click_cb()
 { 
   String act;
-  web::get_displayed_image(act);
-  web::select_next_image(act);
-}
-
-void connection_cb(event_e event)
-{
+  pixelbox::web::get_displayed_image(act);
+  pixelbox::web::select_next_image(act);
 }
 
 void image_updated()
 {
   //open the image
   String filename;
-  if(!web::get_displayed_image(filename)) return;
+  if(!pixelbox::web::get_displayed_image(filename)) return;
   File image_file = LittleFS.open("/images/" + filename, "r");
   if(!image_file) return;
 
-  //currently only supports PNG
+  //currently only supports PNG and GIF
   bool png = true;
   if(filename.endsWith(".png")) png = true;
   else if(filename.endsWith(".gif")) png = false;
@@ -81,7 +77,7 @@ void image_updated()
       }
     }
     img_parse::deinit(ctx);
-    ws2812b_8x8::set(image);
+    pixelbox::ws2812b_8x8::set(image);
   }
   else
   {
@@ -100,44 +96,35 @@ void image_updated()
     if(ctx.images_size == 1)
     {
       memcpy(image, ctx.images[0].output, sizeof(image));
-      ws2812b_8x8::set(image);
+      pixelbox::ws2812b_8x8::set(image);
     }
     else
     {
-      anim::animation_init(&animation); //dealloc if necessary and zero everything
+      pixelbox::anim::animation_init(&animation); //dealloc if necessary and zero everything
       for(uint32_t i = 0; i < ctx.images_size; i++)
       {
         if(!ctx.images[i].gce.valid) continue; //skip frames without gce
-        anim::add_frame(&animation, 
+        pixelbox::anim::add_frame(&animation, 
                         ctx.images[i].gce.delay_time_10ms * 10, 
                         ctx.images[i].id.left_position, 
                         ctx.images[i].id.top_position,
                         (CRGB*)ctx.images[i].output,
                         ctx.images[i].output_size);
       }
-      ws2812b_8x8::set(&animation);
+      pixelbox::ws2812b_8x8::set(&animation);
     }
     img_parse::deinit(ctx);
   }
 }
 
-bool displayed_image_check(void* data)
-{
-  image_updated();
-  return true;
-}
-
 void setup()
-{
-  networking::setup();
-  web::setup();
-  ws2812b_8x8::setup();
-  ws2812b_8x8::set(connecting_image);
+{  
+  pixelbox::ws2812b_8x8::setup();
+  pixelbox::ws2812b_8x8::set(connecting_image);
+  pixelbox::web::setup();
 
-  networking::attach_conn_cb(connection_cb);
-  button::attach_click_cb(click_cb);
-  web::add_updated_cb(image_updated);
-  // hb_timer.every(1000, displayed_image_check);
+  btn.attachClick(click_cb);
+  pixelbox::web::add_updated_cb(image_updated);
 
   delay(200);
   image_updated();
@@ -145,9 +132,7 @@ void setup()
 
 void loop()
 {
-  hb_timer.tick();
-
-  networking::loop();
-  ws2812b_8x8::loop();
-  button::loop();
+  pixelbox::ws2812b_8x8::loop();
+  pixelbox::web::loop();
+  btn.tick();
 }
