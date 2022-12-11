@@ -14,15 +14,14 @@ namespace pixelbox
 {
   namespace ws2812b_8x8
   {
-    void set(CRGB *in);
-    void set(anim::animation_s* anim);
-    void set_color(CRGB color);
+    //set data to be displayed
+    void set(CRGB *in); //set image 
+    void set(anim::animation_s* anim); //set animation
+    void set_color(CRGB color); //set color
 
+    //set display parameters
     void set_brightness(uint8_t value);
     void set_enable(bool on);
-
-    void render_next_anim_frame();
-    bool render(void* data);
 
     void setup();
     void loop();

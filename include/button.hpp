@@ -2,7 +2,9 @@
 
 #include <OneButton.h>
 
-#define BUTTON_GPIO_PIN    0
+#define BUTTON_GPIO_PIN        0
+#define BUTTON_ACTIVE_LOW      true
+#define BUTTON_PULL_UP_ENABLE  false
 
 namespace pixelbox
 {

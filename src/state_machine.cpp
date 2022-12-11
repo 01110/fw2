@@ -10,25 +10,25 @@ namespace pixelbox
 {
   namespace state_machine
   {
-    extern CRGB connecting_image[];
-    pixelbox::anim::animation_s animation;
+    extern CRGB connecting_image[];        //image displayed on startup/during connecting to Wi-Fi
+    pixelbox::anim::animation_s animation; //animation data, for displaying GIF files
 
-    void click_cb()
+    void click_cb() //on click let's display the next stored image from flash
     { 
       String act;
       pixelbox::web::get_displayed_image(act);
       pixelbox::web::select_next_image(act);
     }
 
-    void image_updated()
+    void image_updated() //on image updated try to parse and display image
     {
-      //open the image
+      //read the displayed image's name and open it
       String filename;
       if(!pixelbox::web::get_displayed_image(filename)) return;
       File image_file = LittleFS.open("/images/" + filename, "r");
       if(!image_file) return;
 
-      //currently only supports PNG and GIF
+      //currently only supports PNG and GIF, check the file extension
       bool png = true;
       if(filename.endsWith(".png")) png = true;
       else if(filename.endsWith(".gif")) png = false;
@@ -44,22 +44,27 @@ namespace pixelbox
         image_file.close();
         return;
       }
-      image_file.close();
+      image_file.close(); //we don't need the file to be open any more, close it
 
-      //frame buffer
+      //temporary buffer for image data to be displayed
       CRGB image[WS_LED_NUM];
 
       if(png)
       {
+        //init the PNG parsing context
         img_parse::png_parse_context_s ctx;
         if(!img_parse::init(ctx, img_buf, img_size)) return;
-        free(img_buf);
-        if(!img_parse::parse(ctx)) return;
+        free(img_buf); //after init, image data copied into the ctx, no need for the img_buf (can be optimized if we read the image data from flash right into the context)
 
-        //don't support invalid sized PNG images
-        if(ctx.hdr.height != 8 || ctx.hdr.width != 8) return;
+        //parse and check for error OR image with invalid size
+        if(!img_parse::parse(ctx) || (ctx.hdr.height != 8 || ctx.hdr.width != 8))
+        {
+          img_parse::deinit(ctx);
+          pixelbox::ws2812b_8x8::set_color(CRGB::Red); //display red color for error
+          return;
+        }
 
-        //export output
+        //export output pixel data from the context into the CRGB array to pass it to fastled
         if(ctx.pixel_size == 3)
           memcpy(image, ctx.unfiltered_data, sizeof(image));
         else if(ctx.pixel_size == 4)
@@ -71,29 +76,34 @@ namespace pixelbox
             image[i].b = ctx.unfiltered_data[4*i+2];
           }
         }
+
+        //dealloc everything left from the parsing
         img_parse::deinit(ctx);
+
+        //set the image to be displayed
         pixelbox::ws2812b_8x8::set(image);
       }
       else
       {
-        img_parse::gif_parse_context_s ctx;
-        
+        //init the GIF parsing context
+        img_parse::gif_parse_context_s ctx;        
         if(img_parse::init(ctx, img_buf, img_size) != img_parse::error_code_ok) return;
-        free(img_buf);
-        img_parse::error_code_e err = img_parse::parse(ctx);
-        if(err != img_parse::error_code_ok)
+        free(img_buf); //after init, image data copied into the ctx, no need for the img_buf (can be optimized if we read the image data from flash right into the context)
+        
+        //parse and check for error OR image with invalid size
+        if(img_parse::parse(ctx) != img_parse::error_code_ok || (ctx.lsd.height != 8 || ctx.lsd.width != 8))
         {
           img_parse::deinit(ctx);
+          pixelbox::ws2812b_8x8::set_color(CRGB::Red); //display red color for error
           return;
         }
-        if(ctx.lsd.height != 8 || ctx.lsd.width != 8) return;
 
-        if(ctx.images_size == 1)
+        if(ctx.images_size == 1) //if it's an image, simply set it
         {
           memcpy(image, ctx.images[0].output, sizeof(image));
           pixelbox::ws2812b_8x8::set(image);
         }
-        else
+        else //if it's an animation export the frames into an animation and set it
         {
           pixelbox::anim::animation_init(&animation); //dealloc if necessary and zero everything
           for(uint32_t i = 0; i < ctx.images_size; i++)
@@ -108,12 +118,15 @@ namespace pixelbox
           }
           pixelbox::ws2812b_8x8::set(&animation);
         }
+
+        //dealloc everything left from the parsing
         img_parse::deinit(ctx);
       }
     }
 
     void setup()
     {
+      //on startup set the connecting image if no image is uploaded/storage is empty
       pixelbox::ws2812b_8x8::set(connecting_image);
       image_updated();
     }
