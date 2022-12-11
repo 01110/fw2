@@ -1,5 +1,11 @@
 #include <FastLED.h>
 
+
+namespace pixelbox
+{
+namespace state_machine
+{
+
 CRGB connecting_image[64] = {
   CRGB(180, 82, 82),
   CRGB(75, 128, 202),
@@ -66,3 +72,5 @@ CRGB connecting_image[64] = {
   CRGB(180, 82, 82),
   CRGB(180, 82, 82)
 };
+}
+}
