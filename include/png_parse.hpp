@@ -4,9 +4,17 @@
 #include <cstdlib>
 #include <cmath>
 
+//Materials used for writing this parser:
+
+//PNG format standard, RFC 2083: https://www.rfc-editor.org/rfc/rfc2083
+//libPNG (ideas), generic and mature PNG parsing lib: http://libpng.org/pub/png/libpng.html
+//uPNG (ideas), a very small PNG parsing lib: https://github.com/elanthis/upng
+//tinf (used as third party code), a very tiny implementation of the inflate algo: https://github.com/jibsen/tinf
+
 namespace img_parse
 {
-  typedef enum
+  //PNG chunk types
+  typedef enum chunk_type_e
   {
     chunk_type_inv  = 0x58585858, //invalid
     chunk_type_ihdr = 0x49484452,
@@ -14,7 +22,8 @@ namespace img_parse
     chunk_type_iend = 0x49454E44,
   } chunk_type_e;
 
-  typedef enum
+  //PNG filter types
+  typedef enum filter_method_e
   {
     filter_method_none = 0,
     filter_method_sub = 1,
@@ -23,7 +32,8 @@ namespace img_parse
     filter_method_paeth = 4,
   } filter_method_e;
 
-  typedef struct
+  //PNG header
+  typedef struct ihdr_s
   {
     uint32_t width;
     uint32_t height;
@@ -34,18 +44,19 @@ namespace img_parse
     uint8_t  interlace_method;
   } ihdr_s;
 
-  typedef struct
+  //generic PNG chunk
+  typedef struct chunk_data_s
   {
     uint32_t len;
     uint32_t type;
     uint32_t crc32;
   } chunk_data_s;
   
-  typedef struct 
+  typedef struct png_parse_context_s
   {
-    ihdr_s hdr;
+    ihdr_s hdr; //parsed header of the PNG file
     uint8_t pixel_size;
-    bool parsed;
+    bool parsed; //file is parsed and unfiltered data/size are valid
 
     //raw PNG data to parse
     uint8_t* data;
