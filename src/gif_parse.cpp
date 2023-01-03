@@ -150,11 +150,11 @@ namespace img_parse
     image_s* image_pt = ctx.images + (ctx.images_size - 1);
     if(!image_pt->id.fields.local_color_table_flag) return error_code_ok;
 
-    //calc the gct size and check the input size
+    //calc the lct size and check the input size
     uint32_t lct_size = (0x01 << (image_pt->id.fields.local_color_table_size + 1)) * 3;
     if(ctx.input_size < (ctx.offset + lct_size)) return error_code_out_of_bounds;
 
-    //allocate memory for gct and copy it
+    //allocate memory for lct and copy it
     image_pt->lct = (color_s*)calloc(lct_size, 1);
     if(image_pt->lct == NULL) return error_code_mem_alloc;
     image_pt->lct_size = lct_size / 3;
@@ -299,8 +299,7 @@ namespace img_parse
   }
 
   error_code_e parse_image(gif_parse_context_s& ctx)
-  {
-    
+  {    
     if(ctx.parsed) return error_code_parsed;
     if(*(ctx.input + ctx.offset) != block_type_image_descriptor) return error_code_inconsistence;
     if(ctx.input_size - ctx.offset < 10) return error_code_inconsistence; //at least the idesc
@@ -427,15 +426,9 @@ namespace img_parse
       image_pt->lzw_offset_byte = 0;
     }
 
-    // ws2812b_8x8::set_color(CRGB::Purple);
-
     //just some extra checking
     if(image_pt->index_stream_offset != (image_pt->id.height * image_pt->id.width))
-    {
-      // if(image_pt->index_stream_offset > ((uint32_t)image_pt->id.height * (uint32_t)image_pt->id.width + 64)) ws2812b_8x8::set_color(CRGB::Red);
-      // else ws2812b_8x8::set_color(CRGB::Blue);
       return error_code_inconsistence;
-    }
 
     //create RGBA array based on index stream and color tables
     color_s* color_table = image_pt->id.fields.local_color_table_flag ? image_pt->lct : ctx.gct;
@@ -449,7 +442,6 @@ namespace img_parse
       memcpy(&image_pt->output[i], &color_table[image_pt->index_stream[i]], sizeof(color_s));
     }
 
-    // ws2812b_8x8::set_color(CRGB::Orange);
     return error_code_ok;
   }
 
@@ -506,7 +498,7 @@ namespace img_parse
       break;
     }
     default:
-    //handle unhandled blocks :)
+      //handle unhandled blocks :)
       break;
     }
 
@@ -529,7 +521,6 @@ namespace img_parse
 
   error_code_e parse(gif_parse_context_s& ctx)
   {
-    // ws2812b_8x8::set_color(CRGB::White);
     if(ctx.parsed) return error_code_parsed;
     error_code_e err;
     err = check_header(ctx);

@@ -16,7 +16,6 @@ namespace img_parse
     error_code_out_of_bounds = 4,
     error_code_parsed = 5,
     error_code_inconsistence = 6,
-
   } error_code_e;
 
   typedef enum block_type_e
@@ -134,7 +133,7 @@ namespace img_parse
     uint32_t last_code; //code parsed in the previous step
     uint32_t code; //currently parsed code
 
-    //output data in RGB
+    //output data in RGB similar to FastLED
     color_s* output;  
     uint32_t output_size;
 
@@ -158,6 +157,7 @@ namespace img_parse
     //last graphic control extension
     graphic_control_extension_s last_gce;
 
+    //dynamically allocated array for storing frames/images
     image_s* images;
     uint32_t images_size;
 
