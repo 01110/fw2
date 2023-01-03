@@ -10,10 +10,10 @@
 
 void setup()
 {  
-  pixelbox::ws2812b_8x8::setup();  
-  pixelbox::web::setup();
-  pixelbox::state_machine::setup();
+  pixelbox::ws2812b_8x8::setup();
   pixelbox::wifi_manager::setup();
+  pixelbox::web::setup();
+  pixelbox::state_machine::setup();  
   pixelbox::button::setup(pixelbox::state_machine::click_cb);
   pixelbox::web::add_updated_cb(pixelbox::state_machine::image_updated);  
 }

@@ -155,8 +155,8 @@ namespace pixelbox
       });
       server.on("/mvp.css", HTTP_GET, [](AsyncWebServerRequest* request)
       {
-        AsyncWebServerResponse *response = request->beginResponse(LittleFS, "/mvp.css", "text/css", false, nullptr);
-        // response->addHeader("Content-Encoding", "gzip");
+        AsyncWebServerResponse *response = request->beginResponse(LittleFS, "/mvp.css.gz", "text/css", false, nullptr);
+        response->addHeader("Content-Encoding", "gzip");
         request->send(response);
       });
       server.on("/displayed_image", HTTP_GET, [](AsyncWebServerRequest* request)

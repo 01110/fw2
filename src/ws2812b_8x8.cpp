@@ -15,6 +15,10 @@ namespace pixelbox
 
     Timer timer = Timer<1, millis>(); //ms timer for rendering
 
+    //locally used funcs
+    bool render(void* data);
+    void render_next_anim_frame();
+
     void set(CRGB *in)
     {
       if(in == NULL) return;
