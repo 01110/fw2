@@ -21,6 +21,8 @@ namespace pixelbox
 
     //set display parameters
     void set_brightness(uint8_t value);
+    void set_brightness_percent(uint8_t percent);
+    void set_max_current(uint32 current_ma);
     void set_enable(bool on);
 
     void setup();

@@ -20,7 +20,7 @@ if os.path.exists(dir_output)==True:
   shutil.rmtree(dir_output)
 os.mkdir(dir_output)
 
-#copy static content & js content
+#copy css content & js content
 copy(dir_css, dir_output)
 copy(dir_js, dir_output)
 
@@ -32,7 +32,7 @@ for file_name in output_files:
       shutil.copyfileobj(f_in, f_out)
   os.remove(dir_output+'/'+file_name)
 
-#copy index
+#copy html
 copy(dir_html, dir_output)  
 
 #copy output to data

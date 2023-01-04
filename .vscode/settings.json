@@ -19,6 +19,9 @@
     "list": "cpp",
     "unordered_map": "cpp",
     "vector": "cpp",
-    "cstdlib": "cpp"
+    "cstdlib": "cpp",
+    "*.tcc": "cpp",
+    "optional": "cpp",
+    "system_error": "cpp"
   }
 }

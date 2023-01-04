@@ -125,6 +125,32 @@ function set_displayed_image(name)
   });
 }
 
+function brightness_changed()
+{
+  let percent = document.getElementById("brightness_range").value;
+  document.getElementById("brightness_label").innerText = "Brightness: " + percent + "%";
+  fetch('set_brightness', {
+    method: 'POST',
+    headers:{
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },    
+    body: new URLSearchParams({'brightness': percent})
+  });
+}
+
+function max_current_changed()
+{
+  let current = document.getElementById("max_current_range").value;
+  document.getElementById("max_current_label").innerText = "Max current: " + current + " mA";
+  fetch('set_max_current', {
+    method: 'POST',
+    headers:{
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },    
+    body: new URLSearchParams({'max_current': current})
+  });
+}
+
 document.getElementById("upload_form").onsubmit = upload_img;
 refresh_image();
 refresh_image_list();

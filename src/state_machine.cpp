@@ -124,11 +124,43 @@ namespace pixelbox
       }
     }
 
+    void load_brightness()
+    {
+      File f = LittleFS.open("/brightness", "r");
+      if(!f)
+      {
+        File w = LittleFS.open("/brightness", "w");
+        w.write("50");
+        w.close();
+        pixelbox::ws2812b_8x8::set_brightness_percent(50);
+        return;
+      }
+      pixelbox::ws2812b_8x8::set_brightness_percent(f.readString().toInt());
+      f.close();
+    }
+
+    void load_max_current()
+    {
+      File f = LittleFS.open("/max_current", "r");
+      if(!f)
+      {
+        File w = LittleFS.open("/max_current", "w");
+        w.write("1500");
+        w.close();
+        pixelbox::ws2812b_8x8::set_max_current(1500);
+        return;
+      }
+      pixelbox::ws2812b_8x8::set_max_current(f.readString().toInt());
+      f.close();
+    }
+
     void setup()
     {
       //on startup set the connecting image if no image is uploaded/storage is empty
       pixelbox::ws2812b_8x8::set(connecting_image);
       image_updated();
+      load_max_current();
+      load_brightness();
     }
   }  
 }

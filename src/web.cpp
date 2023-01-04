@@ -135,6 +135,22 @@ namespace pixelbox
         return String(info.usedBytes / 1024);
       else if(var == "FREE_HEAP")
         return String(ESP.getFreeHeap());
+      else if(var == "BRIGHTNESS")
+      {
+        File f = LittleFS.open("/brightness", "r");
+        if(!f) return "";
+        String ret = f.readString();
+        f.close();
+        return ret;
+      }
+      else if(var == "MAX_CURRENT")
+      {
+        File f = LittleFS.open("/max_current", "r");
+        if(!f) return "";
+        String ret = f.readString();
+        f.close();
+        return ret;
+      }
       else
         return String();
     }
@@ -220,6 +236,40 @@ namespace pixelbox
         String output;
         output += "{\"total_size\":" + processor("TOTAL_SIZE") + ", \"allocated_size\":" + processor("ALLOCATED_SIZE") + ", \"free_heap\":" + processor("FREE_HEAP") + "}";
         request->send(200, "text/json", output);
+      });
+      server.on("/set_brightness", HTTP_POST, [](AsyncWebServerRequest* request)
+      {
+        File br = LittleFS.open("/brightness", "w");
+        if(!br)
+        {
+          request->send(500, "plain/text", "Failed to save brightness.");
+          return;
+        }
+        if(br.write(request->arg("brightness").c_str()) != request->arg("brightness").length())
+        {
+          request->send(500, "plain/text", "Failed to save brightness.");
+          return;
+        }
+        br.close();
+        pixelbox::ws2812b_8x8::set_brightness_percent(request->arg("brightness").toInt());
+        request->send(200);
+      });
+      server.on("/set_max_current", HTTP_POST, [](AsyncWebServerRequest* request)
+      {
+        File br = LittleFS.open("/max_current", "w");
+        if(!br)
+        {
+          request->send(500, "plain/text", "Failed to save max current.");
+          return;
+        }
+        if(br.write(request->arg("max_current").c_str()) != request->arg("max_current").length())
+        {
+          request->send(500, "plain/text", "Failed to save max current.");
+          return;
+        }
+        br.close();
+        pixelbox::ws2812b_8x8::set_max_current(request->arg("max_current").toInt());
+        request->send(200);
       });
       server.begin();
     }

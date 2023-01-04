@@ -50,6 +50,18 @@ namespace pixelbox
       FastLED.setBrightness(value);
     }
 
+    void set_brightness_percent(uint8_t percent)
+    {
+      if(percent > 100) percent = 100;
+      FastLED.setBrightness(percent * 255 / 100);
+    }
+
+    void set_max_current(uint32 current_ma)
+    {
+      if(current_ma > 3000) current_ma = 3000;
+      FastLED.setMaxPowerInVoltsAndMilliamps(5, current_ma);
+    }
+
     void set_enable(bool on)
     {
       ws2812b_8x8::on = on;

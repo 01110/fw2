@@ -36,6 +36,17 @@
         </p>        
       </section>
       <section>
+        <h2>Settings</h2>
+        <p>
+          <form id="settings_form">
+            <label id="brightness_label" for="brightness_range">Brightness: %BRIGHTNESS%%%</label>
+            <input id="brightness_range" type="range" oninput="brightness_changed()" min="0" max="100" step="10" value="%BRIGHTNESS%"></input>
+            <label id="max_current_label" for="max_current_range">Max current: %MAX_CURRENT% mA</label>
+            <input id="max_current_range" type="range" oninput="max_current_changed()" min="0" max="3000" step="300" value="%MAX_CURRENT%"></input>
+          </form>
+        </p>
+      </section>
+      <section>
         <header>
           <h2>Storage & memory</h2>
         </header>
